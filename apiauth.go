@@ -25,6 +25,9 @@ var errorSignMismatch = errors.New("Signature Mismatch occurred")
 var errorReqOld = errors.New("Request too old")
 var errorAuthHeader = errors.New("Malformed Auth Header")
 
+//relaxation for out of sync servers
+const maxTimeOffset time.Duration = 30 * time.Second
+
 //Authentic Determines if the request is authentic given the request and a finder method
 //and returns the result returned by Finder if request is authentic else error
 func Authentic(request *http.Request, f Finder) (interface{}, error) {
@@ -66,7 +69,7 @@ func requestTooOld(request *http.Request) bool {
 		return true
 	}
 	diff := time.Since(headerTime)
-	if diff.Seconds() < 0 || diff.Seconds() > 900 {
+	if diff < -maxTimeOffset || diff > (900*time.Second+maxTimeOffset) {
 		return true
 	}
 	return false
