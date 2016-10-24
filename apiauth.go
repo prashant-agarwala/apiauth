@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -24,6 +25,15 @@ var errorMD5 = errors.New("MD5 mismatch occurred")
 var errorSignMismatch = errors.New("Signature Mismatch occurred")
 var errorReqOld = errors.New("Request too old")
 var errorAuthHeader = errors.New("Malformed Auth Header")
+var gmt *time.Location
+
+func init() {
+	loc, err := time.LoadLocation("Etc/GMT")
+	if err != nil {
+		log.Panic("apiauth: Can not load timezone Etc/GMT: ", err)
+	}
+	gmt = loc
+}
 
 //relaxation for out of sync servers
 const maxTimeOffset time.Duration = 30 * time.Second
@@ -155,7 +165,7 @@ func validateMD5(request *http.Request) error {
 }
 
 func setDate(request *http.Request) {
-	request.Header.Add("Date", time.Now().Format(time.RFC1123))
+	request.Header.Add("Date", time.Now().In(gmt).Format(time.RFC1123))
 }
 
 func setMD5(request *http.Request) error {
